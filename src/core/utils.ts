@@ -1,8 +1,14 @@
 import { History, LocationState } from "history";
 import { Base64 } from "js-base64";
 import { each } from "lodash";
-import { parse as parseQs, stringify as stringifyQs } from "query-string";
+import { resolveHref } from "next/dist/next-server/lib/router/router";
+import {
+  parse as parseQs,
+  ParsedQuery,
+  stringify as stringifyQs,
+} from "query-string";
 import { FetchResult } from "react-apollo";
+import { UrlObject } from "url";
 
 import { OrderDirection, ProductOrderField } from "../../gqlTypes/globalTypes";
 import { IFilterAttributes } from "../@next/types";
@@ -128,8 +134,8 @@ export const maybe = <T>(exp: () => T, d?: T) => {
 
 export const parseQueryString = (
   location: LocationState
-): { [key: string]: string } => {
-  let query: Record<string, string> = parseQs(window.location.search.substr(1));
+): ParsedQuery<string> => {
+  let query: ParsedQuery<string> = parseQs(window.location.search.substr(1));
 
   each(query, (value, key) => {
     if (Array.isArray(value)) {
@@ -172,3 +178,13 @@ export const findFormErrors = (result: void | FetchResult): FormError[] => {
 };
 
 export const removeEmptySpaces = (text: string) => text.replace(/\s+/g, "");
+
+/**
+ * Next `push` does not generate properly urls like `<Link />`. So use `Link` internal mechanism
+ * from the server router to generate it.
+ * Might be improved in the future?
+ * @param curentPathname - current pathname from the `useRouter`
+ * @param url - UrlObject
+ */
+export const generatePath = (curentPathname: string, url: UrlObject) =>
+  resolveHref(curentPathname, url, true)[1];
